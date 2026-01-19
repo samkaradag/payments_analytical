@@ -1,0 +1,19 @@
+"""
+hu - Spark Application
+Created: 2026-01-19
+"""
+from pyspark.sql import SparkSession
+from pyspark.sql.functions import *
+
+def main():
+    # Initialize Spark Session
+    spark = SparkSession.builder \
+        .appName("hu") \
+        .getOrCreate()
+    
+    # Your Spark code here
+    
+    spark.stop()
+
+if __name__ == "__main__":
+    main()
