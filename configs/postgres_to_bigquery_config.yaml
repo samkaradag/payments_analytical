@@ -1,0 +1,115 @@
+# PostgreSQL to BigQuery Ingestion Configuration
+# This file defines all parameters for the ingestion pipeline
+
+# PostgreSQL Connection Configuration
+postgres:
+  host: "postgres.example.com"
+  port: 5432
+  database: "analytics_db"
+  user: "${POSTGRES_USER}"  # Use environment variables or Databricks secrets
+  password: "${POSTGRES_PASSWORD}"
+  ssl_mode: "require"  # Options: require, disable, allow, prefer
+
+# Source Table Configuration
+source:
+  schema: "public"
+  table: "transactions"
+  
+  # Incremental Load Settings
+  incremental: true
+  incremental_column: "updated_at"  # Column to track changes (timestamp or date)
+  
+  # Performance Settings
+  batch_size: 10000  # JDBC batch size
+  parallel_partitions: 4  # Number of parallel read partitions
+
+# BigQuery Configuration
+bigquery:
+  project_id: "my-gcp-project"
+  dataset: "analytical_data"
+  table: "transactions"
+  
+  # Write Mode Options:
+  # - append: Add rows to existing table
+  # - overwrite: Replace entire table
+  # - upsert: Update existing rows, insert new ones (requires key columns)
+  write_mode: "append"
+  
+  # Partitioning
+  partition_field: "ingestion_date"  # Field to partition by
+  partition_type: "DAY"  # DAY, MONTH, YEAR
+
+# Ingestion Processing Configuration
+ingestion:
+  # Add metadata columns for tracking
+  add_metadata: true
+  
+  # Add hash column for change detection
+  add_hash_column: true
+  
+  # Enable data quality validation
+  validate_data: true
+  
+  # Metadata columns to add
+  metadata_columns:
+    - source_table
+    - source_schema
+    - ingestion_timestamp
+    - ingestion_date
+
+# Data Quality Rules (Optional)
+data_quality:
+  enabled: true
+  rules:
+    - column: "transaction_id"
+      rule: "NOT_NULL"
+      severity: "ERROR"
+    - column: "amount"
+      rule: "POSITIVE"
+      severity: "WARNING"
+    - column: "created_at"
+      rule: "VALID_DATE"
+      severity: "ERROR"
+
+# Logging Configuration
+logging:
+  level: "INFO"  # DEBUG, INFO, WARNING, ERROR
+  output_format: "json"  # json or text
+
+# Scheduling (if using Databricks Jobs)
+schedule:
+  enabled: true
+  frequency: "DAILY"  # HOURLY, DAILY, WEEKLY, MONTHLY
+  time: "02:00"  # UTC time
+  timezone: "UTC"
+
+# Notification Settings
+notifications:
+  enabled: true
+  on_failure:
+    - type: "email"
+      recipients:
+        - "data-team@example.com"
+  on_success:
+    - type: "email"
+      recipients:
+        - "data-team@example.com"
+
+# Retention Policy
+retention:
+  enabled: false
+  days: 90  # Keep data for 90 days
+
+# Environment-specific overrides
+environments:
+  dev:
+    postgres:
+      host: "postgres-dev.example.com"
+    bigquery:
+      dataset: "analytical_data_dev"
+  
+  prod:
+    postgres:
+      host: "postgres-prod.example.com"
+    bigquery:
+      dataset: "analytical_data_prod"
